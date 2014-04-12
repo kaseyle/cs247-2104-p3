@@ -3,13 +3,121 @@
 
 (function() {
 
-  var cur_video_blob = null;
+  var cur_video_blobs = [];
   var fb_instance;
+  var vid_counter = 0;
+  var num_vids_entered = 0;
 
   $(document).ready(function(){
     connect_to_chat_firebase();
     connect_webcam();
+    set_up_buttons();
   });
+  var recording = false;
+  var keys = {};
+
+  function count_videos() {
+    return $("#type_box").val().split(video_char).length - 1;
+  }
+
+  function set_up_buttons() {
+    $("#type_box").keydown(function (e) {
+      keys[e.which] = true;
+      if (e.which == 8) {
+        $("#replay_stream video").remove();
+      }
+      return check_keys();
+    });
+    $("#type_box").keyup(function (e) {
+      delete keys[e.which];
+      if (e.which == 8) {
+        num_vids_entered = count_videos();
+        if (num_vids_entered < cur_video_blobs.length) {
+          cur_video_blobs.pop();
+          console.log("DELETED!");
+        }
+      }       
+      if (e.which == key_one || e.which == key_two) {
+        if (recording) {
+          recording = false;
+          stop_recording();
+          var value = $("#type_box").val();
+          value += video_char;
+          num_vids_entered++;
+          $("#type_box").val(value);
+          console.log("num vids: " + num_vids_entered);
+        }
+
+      }
+    });
+  }
+
+  function replay_video(b64_data) {
+
+    console.log("REPLAY");
+
+    var video = document.createElement("video");
+      
+      video.autoplay = true;
+      video.controls = false; // optional
+      video.loop = true;
+      video.width = 160;
+      video.height = 120;
+      video.className = "record_vid";
+
+      var source = document.createElement("source");
+      source.src =  URL.createObjectURL(base64_to_blob(b64_data));
+      source.type =  "video/webm";
+
+      video.appendChild(source);
+
+      // for gif instead, use this code below and change mediaRecorder.mimeType in onMediaSuccess below
+      // var video = document.createElement("img");
+      // video.src = URL.createObjectURL(base64_to_blob(data.v));
+
+      document.getElementById("replay_stream").appendChild(video);
+  }
+
+  function stop_recording() {
+    //recording = false;
+    console.log("STOP RECORDING!");
+    mediaRecorder.stop();
+    $("#webcam_stream").hide();
+    clearInterval(interval);
+    $("#second_counter").html("");
+  }
+
+  var key_one = 16;
+  var key_two = 32;
+  var mediaRecorder;
+  var interval;
+  var video_char = "🎥";
+
+  function check_keys() {
+    if (keys.hasOwnProperty(key_one) && keys.hasOwnProperty(key_two) && Object.keys(keys).length == 2) {
+      if (!recording) {
+        $("#replay_stream video").remove();
+        $("#webcam_stream").show();
+        console.log("START RECORDING!");
+        recording = true;
+        mediaRecorder.start(7500);
+        set_counter();
+      }
+      return false;
+    }
+  }
+
+  function set_counter() {
+      // counter
+      var time = 1;
+      var second_counter = document.getElementById('second_counter');
+      interval = setInterval(function(){
+        if (time == 7 && recording) {
+          stop_recording();
+        }
+        second_counter.innerHTML = time++;
+      },1000);
+  }
 
   function connect_to_chat_firebase(){
     /* Include your Firebase link here!*/
@@ -49,8 +157,10 @@
     // bind submission box
     $("#submission input").keydown(function( event ) {
       if (event.which == 13) {
+        $("#replay_stream video").remove();
         if(has_emotions($(this).val())){
-          fb_instance_stream.push({m:username+": " +$(this).val(), v:cur_video_blob, c: my_color});
+          fb_instance_stream.push({m:username+": " +$(this).val(), v:cur_video_blobs, c: my_color});
+          cur_video_blobs = [];
         }else{
           fb_instance_stream.push({m:username+": " +$(this).val(), c: my_color});
         }
@@ -64,18 +174,62 @@
   }
 
   // creates a message node and appends it to the conversation
-  function display_msg(data){
+/*  function display_msg(data){
     $("#conversation").append("<div class='msg' style='color:"+data.c+"'>"+data.m+"</div>");
     if(data.v){
-      // for video element
-      var video = document.createElement("video");
+      for (var i = 0; i < data.v.length; i++) {
+        display_video(data.v[i]);
+      }
+    }
+  }*/
+
+
+  function display_msg(data){
+    $("#conversation").append("<div class='msg' style='color:"+data.c+"'></div>");
+    var msgs = $(".msg");
+    var last_msg = msgs[msgs.length-1];
+    if(data.v){
+      var tokens = data.m.split(video_char);
+      for (var i = 0; i < tokens.length; i++) {
+        $(last_msg).append("<span>" + tokens[i] + "</span>");
+        if (i < data.v.length) {
+          display_video(data.v[i], last_msg);
+        }
+      }
+    } else {
+      $(last_msg).append(data.m);
+    }
+  }
+
+  function display_video(base64_data, last_msg) {
+        var video = document.createElement("video");
+      
+      vid_counter++;
+      video.setAttribute("id", vid_counter);
+
       video.autoplay = true;
       video.controls = false; // optional
-      video.loop = true;
-      video.width = 120;
+      video.loop = false;
+      video.width = 80;
+      video.className = "display_vid";
+
+      var videoPlaying = false;
+
+      video.onclick = function() {
+        if(video.ended) {
+          videoPlaying = false;
+        }
+        if(videoPlaying) {
+          video.pause();
+          videoPlaying = false;
+        } else {
+          video.play();
+          videoPlaying=true;
+        }
+      }
 
       var source = document.createElement("source");
-      source.src =  URL.createObjectURL(base64_to_blob(data.v));
+      source.src =  URL.createObjectURL(base64_to_blob(base64_data));
       source.type =  "video/webm";
 
       video.appendChild(source);
@@ -84,8 +238,13 @@
       // var video = document.createElement("img");
       // video.src = URL.createObjectURL(base64_to_blob(data.v));
 
-      document.getElementById("conversation").appendChild(video);
-    }
+      last_msg.appendChild(video);
+
+      /*$(video).bind("ended", function() {
+        $(video).wrap("<div id='wrap_" + video.id + "'></div>");
+        $("<div class='backg'></div>").insertBefore($(video));
+        $("<div class='overlay'></div>").insertBefore($(video));
+      });*/
   }
 
   function scroll_to_bottom(wait_time){
@@ -109,6 +268,7 @@
       var video_height= 120;
       var webcam_stream = document.getElementById('webcam_stream');
       var video = document.createElement('video');
+      video.className = "record_vid";
       webcam_stream.innerHTML = "";
       // adds these properties to the video
       video = mergeProps(video, {
@@ -120,16 +280,16 @@
       video.play();
       webcam_stream.appendChild(video);
 
-      // counter
-      var time = 0;
-      var second_counter = document.getElementById('second_counter');
-      var second_counter_update = setInterval(function(){
-        second_counter.innerHTML = time++;
-      },1000);
+      // // counter
+      // var time = 0;
+      // var second_counter = document.getElementById('second_counter');
+      // var second_counter_update = setInterval(function(){
+      //   second_counter.innerHTML = time++;
+      // },1000);
 
       // now record stream in 5 seconds interval
       var video_container = document.getElementById('video_container');
-      var mediaRecorder = new MediaStreamRecorder(stream);
+      mediaRecorder = new MediaStreamRecorder(stream);
       var index = 1;
 
       mediaRecorder.mimeType = 'video/webm';
@@ -139,18 +299,23 @@
       mediaRecorder.video_height = video_height/2;
 
       mediaRecorder.ondataavailable = function (blob) {
+          console.log("NEW MEDIA");
           //console.log("new data available!");
           video_container.innerHTML = "";
 
           // convert data into base 64 blocks
           blob_to_base64(blob,function(b64_data){
-            cur_video_blob = b64_data;
+            console.log("PUSH!");
+            cur_video_blobs.push(b64_data);
+            replay_video(b64_data);
           });
       };
+      /*
       setInterval( function() {
         mediaRecorder.stop();
         mediaRecorder.start(3000);
       }, 3000 );
+      */
       console.log("connect to media stream!");
     }
 
@@ -165,12 +330,13 @@
 
   // check to see if a message qualifies to be replaced with video.
   var has_emotions = function(msg){
-    var options = ["lol",":)",":("];
-    for(var i=0;i<options.length;i++){
-      if(msg.indexOf(options[i])!= -1){
+    //var options = ["lol",":)",":("];
+    //for(var i=0;i<options.length;i++){
+    if(msg.indexOf(video_char)!= -1){
+        console.log("TRUE!");
         return true;
-      }
     }
+    //}
     return false;
   }
 

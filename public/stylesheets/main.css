@@ -1,6 +1,7 @@
 body {
   margin: 10px;
-  font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;
+  /*font: 15px "Lucida Grande", Helvetica, Arial, sans-serif;*/
+  font: 15px "Arial Unicode MS";
 }
 a {
   color: #00B7FF;
@@ -12,12 +13,21 @@ a {
   padding: 0;
 }
 #webcam_stream video {
-  border: 2px solid #dcc;
+  border: 2px solid #cc3;
+}
+#replay_stream {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 0;
+}
+#replay_stream video {
+  border: 4px solid #33cc00;
 }
 #second_counter {
   position: fixed;
   top: 20px;
-  right: 20px;
+  right: 50px;
   color: white;
   z-index: 999;
 }
@@ -52,4 +62,35 @@ a {
   color: white;
   text-align: center;
   padding: 50px 0;
+}
+.display_vid {
+  border-radius: 100px;
+  -webkit-border-radius: 100px;
+  -moz-border-radius: 100px;
+  cursor: pointer;
+  cursor: hand;
+}
+.record_vid {
+  border-radius: 100px;
+  -webkit-border-radius: 100px;
+  -moz-border-radius: 100px;
+}
+.overlay {
+  position: absolute;
+  width: 120px;
+  height: 90px;
+  background-color: rgba(202, 200, 200, 0.5);
+  border-radius: 100px;
+  -webkit-border-radius: 100px;
+  -moz-border-radius: 100px;
+}
+.backg {
+  position: absolute;
+  width: 120px;
+  height: 90px;
+  background: url(../images/play.png) no-repeat center;
+  background-size: 40px 40px;
+  border-radius: 100px;
+  -webkit-border-radius: 100px;
+  -moz-border-radius: 100px;
 }
