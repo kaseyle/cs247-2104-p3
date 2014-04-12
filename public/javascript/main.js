@@ -25,6 +25,7 @@
       keys[e.which] = true;
       if (e.which == 8) {
         $("#replay_stream video").remove();
+        $("#replay_text").hide();
       }
       return check_keys();
     });
@@ -32,7 +33,7 @@
       delete keys[e.which];
       if (e.which == 8) {
         num_vids_entered = count_videos();
-        if (num_vids_entered < cur_video_blobs.length) {
+        while (num_vids_entered < cur_video_blobs.length) { // this used to be an if
           cur_video_blobs.pop();
           console.log("DELETED!");
         }
@@ -75,7 +76,8 @@
       // var video = document.createElement("img");
       // video.src = URL.createObjectURL(base64_to_blob(data.v));
 
-      document.getElementById("replay_stream").appendChild(video);
+      $("#replay_text").before(video);
+      $("#replay_text").show();
   }
 
   function stop_recording() {
@@ -91,12 +93,14 @@
   var key_two = 32;
   var mediaRecorder;
   var interval;
-  var video_char = "🎥";
+  //var video_char = "🎥";
+  var video_char = "▶";
 
   function check_keys() {
+    $("#replay_stream video").remove();
+    $("#replay_text").hide();
     if (keys.hasOwnProperty(key_one) && keys.hasOwnProperty(key_two) && Object.keys(keys).length == 2) {
       if (!recording) {
-        $("#replay_stream video").remove();
         $("#webcam_stream").show();
         console.log("START RECORDING!");
         recording = true;
@@ -158,6 +162,7 @@
     $("#submission input").keydown(function( event ) {
       if (event.which == 13) {
         $("#replay_stream video").remove();
+        $("#replay_text").hide();
         if(has_emotions($(this).val())){
           fb_instance_stream.push({m:username+": " +$(this).val(), v:cur_video_blobs, c: my_color});
           cur_video_blobs = [];
