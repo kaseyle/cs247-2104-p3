@@ -7,7 +7,7 @@ a {
   color: #00B7FF;
 }
 #webcam_stream {
-  position: absolute;
+  position: fixed;
   top: 10px;
   right: 10px;
   padding: 0;
@@ -16,7 +16,7 @@ a {
   border: 3px solid #708090;
 }
 #replay_stream {
-  position: absolute;
+  position: fixed;
   top: 10px;
   right: 10px;
   padding: 0;
