@@ -15,6 +15,7 @@
   });
   var recording = false;
   var keys = {};
+  var shift_seen = false;
 
   function count_videos() {
     return $("#type_box").val().split(video_char).length - 1;
@@ -22,15 +23,17 @@
 
   function set_up_buttons() {
     $("#type_box").keydown(function (e) {
-      keys[e.which] = true;
+      if (e.which == key_one) {
+        shift_seen = true;
+      }
       if (e.which == 8) {
         $("#replay_stream video").remove();
         $("#replay_text").hide();
       }
-      return check_keys();
+      return check_keys(e.which);
     });
     $("#type_box").keyup(function (e) {
-      delete keys[e.which];
+      shift_seen = false;
       if (e.which == 8) {
         num_vids_entered = count_videos();
         while (num_vids_entered < cur_video_blobs.length) { // this used to be an if
@@ -96,10 +99,10 @@
   //var video_char = "🎥";
   var video_char = "▶";
 
-  function check_keys() {
+  function check_keys(key_val) {
     $("#replay_stream video").remove();
     $("#replay_text").hide();
-    if (keys.hasOwnProperty(key_one) && keys.hasOwnProperty(key_two) && Object.keys(keys).length == 2) {
+    if (key_val == key_two && shift_seen) {
       if (!recording) {
         $("#webcam_stream").show();
         console.log("START RECORDING!");
